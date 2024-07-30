@@ -11,12 +11,12 @@
   
   ## Installation  
   1. **Clone the Repository:**  
-  ```git clone https://github.com/Ameer-Jamal/RemoveImageBG.git    cd RemoveImageBG```
+  ```git clone https://github.com/Ameer-Jamal/RemoveImageBG.git```
+  ```cd RemoveImageBG```
      
 2. **Install Dependencies:**
     ```pip install -r requirements.txt```
     
-
 ## Usage
 
 1. **Run the Application:**
