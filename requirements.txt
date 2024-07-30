@@ -1,0 +1,5 @@
+PyQt5
+rembg
+pillow
+opencv-python-headless
+numpy
