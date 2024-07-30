@@ -10,11 +10,11 @@
   - Python 3.6+ - PyQt5 - rembg - pillow - opencv-python-headless 
   
   ## Installation  
-  1. **Clone the Repository:**    ```bash    git clone https://github.com/Ameer-Jamal/image-bg-removal-tool.git    cd image-bg-removal-tool```
+  1. **Clone the Repository:**  
+  ```git clone https://github.com/Ameer-Jamal/RemoveImageBG.git    cd RemoveImageBG```
      
 2. **Install Dependencies:**
-    
-    ```bash pip install -r requirements.txt```
+    ```pip install -r requirements.txt```
     
 
 ## Usage
@@ -56,4 +56,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## Acknowledgements
 
 - [rembg](https://github.com/danielgatis/rembg) - The background removal library used in this project.
-- PyQt5 - For the graphical user interface.
+- [PyQt5](https://pypi.org/project/PyQt5/5.8/#:~:text=PyQt5%20is%20a%20comprehensive%20set,platforms%20including%20iOS%20and%20Android.) - For the graphical user interface.
