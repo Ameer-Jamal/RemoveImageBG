@@ -70,6 +70,10 @@ The module also exposes `smooth_alpha` and `composite_background` functions for 
 - The application initialises a single `rembg` session (`isnet-general-use`) and reuses it for every image to avoid repeated model downloads and warmup costs.
 - Images are stored alongside an immutable source copy; rendering always starts from the matte produced by `rembg` to keep edits non-destructive.
 - History snapshots capture adjustment parameters rather than bitmap copies, greatly reducing memory usage for large batches.
+- The processing core now lives in the reusable ``removebg_app`` package with
+  ``BackgroundRemover`` (model session), ``ImageRenderer`` (stateful compositing),
+  and ``ImageProcessor`` (orchestration/export) classes for clearer separation of
+  concerns.
 - Alpha refinement uses Gaussian + median filtering to soften boundaries before background compositing.
 
 ## Future enhancements
@@ -90,3 +94,11 @@ The module also exposes `smooth_alpha` and `composite_background` functions for 
 ## License
 
 MIT License © Contributors. See `LICENSE` (if present) or repository metadata.
+
+## Testing
+
+Run the automated suite (including new renderer/export unit tests) with:
+
+```bash
+pytest
+```
