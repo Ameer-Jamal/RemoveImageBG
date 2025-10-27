@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import io
+import threading
 from pathlib import Path
 from typing import List, Optional, Tuple
 
 from PIL import Image
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QColor, QImage, QPixmap
 from PyQt5.QtWidgets import (
     QApplication,
@@ -34,7 +35,7 @@ from PyQt5.QtWidgets import (
 
 from .pipeline import ImageProcessor
 from .state import ImageState, ProcessedImage
-from .workers import BackgroundRemovalWorker
+from .workers import BackgroundRemovalWorker, warm_process_pool
 
 SUPPORTED_IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".bmp", ".tiff", ".webp"}
 
@@ -107,6 +108,7 @@ class BackgroundRemoverApp(QWidget):
         self._current_batch_total: int = 0
 
         self._build_ui()
+        QTimer.singleShot(0, self._prime_process_pool)
 
     def _build_ui(self) -> None:
         main_layout = QVBoxLayout()
@@ -310,6 +312,18 @@ class BackgroundRemoverApp(QWidget):
         self.background_mode_combo.currentIndexChanged.connect(self.update_from_controls)
         self.update_background_controls()
         self.update_history_buttons()
+
+    def _prime_process_pool(self) -> None:
+        """Warm the shared worker pool on a background thread to reduce launch latency."""
+
+        session_name = getattr(self.processor.remover, "session_name", "isnet-general-use")
+        worker_count = BackgroundRemovalWorker.recommended_worker_count()
+        threading.Thread(
+            target=warm_process_pool,
+            args=(session_name,),
+            kwargs={"max_workers": worker_count},
+            daemon=True,
+        ).start()
 
     def _create_slider(self, minimum: int, maximum: int, value: int, tooltip: str) -> QSlider:
         slider = QSlider(Qt.Horizontal)
