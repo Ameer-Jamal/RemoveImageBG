@@ -17,6 +17,7 @@ class BackgroundRemover:
     def __init__(self, session_name: str = "isnet-general-use") -> None:
         from rembg import new_session
 
+        self.session_name = session_name
         self._session = new_session(session_name)
 
     def remove(self, image: Image.Image) -> Image.Image:
@@ -83,10 +84,24 @@ class ImageProcessor:
         return self.process_image(image, path)
 
     def process_image(self, image: Image.Image, source_path: Path) -> ProcessedImage:
-        output = self.remover.remove(image)
-        refined = refine_alpha(output, radius=3)
-        document = ProcessedImage(source_path=source_path, background_free=refined)
-        document.state.target_size = refined.size
+        background_free = self.remover.remove(image)
+        return self.build_document(background_free, source_path)
+
+    def build_document(
+        self,
+        background_free: Image.Image,
+        source_path: Path,
+        *,
+        pre_refined: bool = False,
+    ) -> ProcessedImage:
+        processed = background_free.convert("RGBA")
+        if not pre_refined:
+            processed = refine_alpha(processed, radius=3)
+        else:
+            processed = processed.copy()
+
+        document = ProcessedImage(source_path=source_path, background_free=processed)
+        document.state.target_size = processed.size
         document.snapshot()
         return document
 

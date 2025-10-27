@@ -2,6 +2,7 @@ from pathlib import Path
 
 from PIL import Image
 
+from removebg_app import pipeline
 from removebg_app.pipeline import ImageProcessor, ImageRenderer
 from removebg_app.state import ProcessedImage
 
@@ -62,3 +63,22 @@ def test_processor_export_flattens_to_rgb(tmp_path):
     saved = Image.open(output_path)
     assert saved.mode == "RGB"
     assert saved.size == document.state.target_size
+
+
+def test_build_document_skips_refine_for_preprocessed(monkeypatch):
+    renderer = ImageRenderer()
+    processor = ImageProcessor(remover=PassthroughRemover(), renderer=renderer)
+
+    calls = []
+
+    def fake_refine(image, radius):  # pragma: no cover - patched behaviour
+        calls.append(radius)
+        return image
+
+    monkeypatch.setattr(pipeline, "refine_alpha", fake_refine)
+
+    image = Image.new("RGBA", (8, 8), (255, 255, 255, 0))
+    document = processor.build_document(image, Path("stub.png"), pre_refined=True)
+
+    assert document.background_free.size == (8, 8)
+    assert calls == []

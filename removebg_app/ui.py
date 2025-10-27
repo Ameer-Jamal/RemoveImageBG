@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import io
 from pathlib import Path
 from typing import List, Optional, Tuple
 
@@ -33,6 +34,7 @@ from PyQt5.QtWidgets import (
 
 from .pipeline import ImageProcessor
 from .state import ImageState, ProcessedImage
+from .workers import BackgroundRemovalWorker
 
 SUPPORTED_IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".bmp", ".tiff", ".webp"}
 
@@ -100,6 +102,9 @@ class BackgroundRemoverApp(QWidget):
         self.current_doc: Optional[ProcessedImage] = None
         self.updating_controls = False
         self.updating_resize = False
+        self.pending_paths: List[Path] = []
+        self.worker: Optional[BackgroundRemovalWorker] = None
+        self._current_batch_total: int = 0
 
         self._build_ui()
 
@@ -369,32 +374,73 @@ class BackgroundRemoverApp(QWidget):
         if not paths:
             return
 
+        self.pending_paths.extend(paths)
+        self._start_worker_if_idle()
+
+    def _start_worker_if_idle(self) -> None:
+        if self.worker and self.worker.isRunning():
+            return
+
+        if not self.pending_paths:
+            return
+
+        batch = self.pending_paths
+        self.pending_paths = []
+        self._current_batch_total = len(batch)
         self.progress_bar.setValue(0)
-        total = len(paths)
-        for index, path in enumerate(paths, start=1):
-            try:
-                document = self.processor.process_path(path)
-            except Exception as exc:  # pragma: no cover - runtime safety
-                QMessageBox.critical(
-                    self,
-                    "Processing error",
-                    f"Failed to process {path.name}: {exc}",
-                )
-                continue
 
-            self.documents.append(document)
-            item = QListWidgetItem(document.display_name)
-            item.setData(Qt.UserRole, document)
-            self.image_list.addItem(item)
-            QApplication.processEvents()
+        session_name = getattr(self.processor.remover, "session_name", "isnet-general-use")
+        self.worker = BackgroundRemovalWorker(
+            batch,
+            session_name=session_name,
+        )
+        self.worker.item_ready.connect(self._on_worker_item_ready)
+        self.worker.progress.connect(self._on_worker_progress)
+        self.worker.failed.connect(self._on_worker_failed)
+        self.worker.finished.connect(self._on_worker_finished)
+        self._set_processing_state(True)
+        self.worker.start()
 
-            if self.current_doc is None:
-                self.image_list.setCurrentItem(item)
+    def _set_processing_state(self, active: bool) -> None:
+        if not active and not self.pending_paths:
+            self.progress_bar.setValue(0)
 
-            progress = int((index / total) * 100)
-            self.progress_bar.setValue(progress)
+    def _on_worker_item_ready(self, path_str: str, payload: bytes) -> None:
+        path = Path(path_str)
+        with Image.open(io.BytesIO(payload)) as image:
+            background_free = image.convert("RGBA").copy()
 
-        self.progress_bar.setValue(100)
+        document = self.processor.build_document(background_free, path, pre_refined=True)
+        self.documents.append(document)
+        item = QListWidgetItem(document.display_name)
+        item.setData(Qt.UserRole, document)
+        self.image_list.addItem(item)
+
+        if self.current_doc is None:
+            self.image_list.setCurrentItem(item)
+
+    def _on_worker_progress(self, completed: int, total: int) -> None:
+        if total <= 0:
+            return
+        progress = int((completed / total) * 100)
+        self.progress_bar.setValue(progress)
+
+    def _on_worker_failed(self, path_str: str, error: str) -> None:
+        QMessageBox.critical(
+            self,
+            "Processing error",
+            f"Failed to process {Path(path_str).name}: {error}",
+        )
+
+    def _on_worker_finished(self) -> None:
+        if self.worker:
+            self.worker.deleteLater()
+            self.worker = None
+
+        self.progress_bar.setValue(100 if self._current_batch_total else 0)
+        self._set_processing_state(False)
+        self._current_batch_total = 0
+        self._start_worker_if_idle()
 
     def capture_state(self) -> None:
         if not self.current_doc:

@@ -5,7 +5,7 @@ A cross-platform PyQt5 desktop application for intelligent background removal an
 ## Highlights
 
 - **State-of-the-art matting** – Uses the high-quality `isnet-general-use` session from `rembg` for accurate extractions without requiring a GPU.
-- **Batch aware** – Drop files, add entire folders, or queue paths via the file picker. Progress feedback keeps long jobs transparent.
+- **Batch aware** – Drop files, add entire folders, or queue paths via the file picker. A multi-process worker keeps the UI fluid while saturating available CPU cores.
 - **Non-destructive editing** – Hue, contrast, brightness, shadow, highlight, edge-feather, rotation, resize, crop, and background settings are tracked per image with undo/redo history.
 - **Background blending studio** – Replace the transparent canvas with solid colours, horizontal gradients, or custom images and preview results instantly.
 - **Multiple export targets** – Save single images or entire batches as PNG, JPEG, TIFF, or WebP with smart transparency fallbacks.
@@ -19,7 +19,7 @@ source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-> **Python**: 3.9 or newer is recommended for the latest `rembg` wheels and ONNX runtime packages.
+> **Python**: 3.12 or newer is recommended for the latest `rembg` wheels, faster standard-library primitives, and ONNX runtime packages.
 
 ## Usage
 
@@ -68,6 +68,7 @@ The module also exposes `smooth_alpha` and `composite_background` functions for 
 ## Architecture notes
 
 - The application initialises a single `rembg` session (`isnet-general-use`) and reuses it for every image to avoid repeated model downloads and warmup costs.
+- Folder ingestion now fans out across a `ProcessPoolExecutor`, initialised once per worker process to reuse `rembg` sessions and maximise throughput on multi-core hardware.
 - Images are stored alongside an immutable source copy; rendering always starts from the matte produced by `rembg` to keep edits non-destructive.
 - History snapshots capture adjustment parameters rather than bitmap copies, greatly reducing memory usage for large batches.
 - The processing core now lives in the reusable ``removebg_app`` package with
