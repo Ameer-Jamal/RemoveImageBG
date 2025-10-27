@@ -20,6 +20,8 @@ pip install -r requirements.txt
 ```
 
 > **Python**: 3.12 or newer is recommended for the latest `rembg` wheels, faster standard-library primitives, and ONNX runtime packages.
+>
+> **NumPy compatibility**: The packaged `onnxruntime` wheels are still being refreshed for NumPy 2.x. The `requirements.txt` pin keeps NumPy below 2.0 to avoid the `_ARRAY_API` import error observed with older binary builds.
 
 ## Usage
 
