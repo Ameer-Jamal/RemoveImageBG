@@ -2,6 +2,8 @@
 
 A cross-platform PyQt5 desktop application for intelligent background removal and rapid image cleanup. The app now ships with a modernised processing pipeline (powered by the **IS-Net** model bundled with `rembg`), a productivity-focused GUI, batch automation tooling, and export presets that keep transparency intact.
 
+<img width="2556" height="1301" alt="image" src="https://github.com/user-attachments/assets/197829c5-2800-4140-b5c9-2afd591bc506" />
+
 ## Highlights
 
 - **State-of-the-art matting** – Uses the high-quality `isnet-general-use` session from `rembg` for accurate extractions without requiring a GPU.
@@ -79,14 +81,6 @@ The module also exposes `smooth_alpha` and `composite_background` functions for 
   concerns.
 - Alpha refinement uses Gaussian + median filtering to soften boundaries before background compositing.
 
-## Future enhancements
-
-- **Cloud offloading** – Integrate optional upload-to-process flows (AWS Lambda, Azure Functions, or remove.bg) for extremely large batches.
-- **GPU acceleration** – Detect CUDA/Metal availability and switch to GPU-enabled `onnxruntime` builds for faster matting.
-- **Interactive cropping** – Swap the numeric crop dialog for a rubber-band selection overlay in the preview widget.
-- **Mobile companion** – Package the processing core into a REST API or use Qt for Mobile to deliver the same workflow on phones/tablets.
-- **Preset manager** – Allow saving/loading adjustment presets for consistent brand outputs across image sets.
-
 ## Contributing
 
 1. Fork the repository and create a feature branch.
@@ -96,8 +90,7 @@ The module also exposes `smooth_alpha` and `composite_background` functions for 
 
 ## License
 
-MIT License © Contributors. See `LICENSE` (if present) or repository metadata.
-
+MIT License © Contributors.
 ## Testing
 
 Run the automated suite (including new renderer/export unit tests) with:
