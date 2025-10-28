@@ -1,5 +1,7 @@
-PyQt5
-rembg
-pillow
-opencv-python-headless
-numpy
+PyQt5>=5.15
+rembg>=2.0.53
+Pillow>=10.0
+opencv-python>=4.8
+numpy<=2
+onnxruntime>=1.16
+pytest>=7.4
